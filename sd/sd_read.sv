@@ -11,6 +11,7 @@ module sd_read(
 
 	logic cmd_start, cmd_done;
 	logic [7:0] response_flags;
+	enum {HALT, READ, DONE} state, next_state;
 	
 	sd_cmd cmd(
 		.cmd_number(8'h40 | 8'h11), // CMD17 
@@ -34,16 +35,24 @@ module sd_read(
 	always_comb begin
 		// Default next state logic
 		next_state = state;
+		
 		// Next state logic
 		case(state)
 			HALT: begin
 				next_state = READ;
 			end
+			
 			READ: begin
 				if (cmd_done) begin
 					if (response_flags == 8'h00)
 						next_state = DONE;
 					cmd_start = 1'b0;
+				end
+			end
+			
+			DONE: begin
+				if (~start) begin
+					next_state = HALT;
 				end
 			end
 		endcase
@@ -59,7 +68,7 @@ module sd_read(
 			end
 			
 			DONE: begin
-				done = 1;
+				done = 1'b1;
 			end
 		endcase
 	end
