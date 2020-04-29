@@ -14,6 +14,8 @@ module sd_init(
 	logic [7:0] response_flags;
 	logic [31:0] data_transmission;
 	
+	enum {HALT, RESET, VOLTAGE_CHECK, INIT1, INIT2, SET_BLOCK_SIZE} state, next_state;
+	
 	sd_cmd cmd(
 		.cmd_number, 
 		.cmd_args,
@@ -39,7 +41,7 @@ module sd_init(
 		// Next state logic
 		case (state)
 			HALT: begin
-				next_state = RESET
+				next_state = RESET;
 			end
 		
 			RESET: begin
@@ -52,7 +54,7 @@ module sd_init(
 			
 			VOLTAGE_CHECK: begin
 				if (cmd_done) begin
-					if (response_flags == 8'h01 and data_transmission == cmd_args)
+					if (response_flags == 8'h01 && data_transmission == cmd_args)
 						next_state = INIT1;
 					cmd_start = 0;
 				end

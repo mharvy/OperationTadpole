@@ -18,7 +18,7 @@ module sd_cmd(
 	
 	
 	always_ff @(posedge clk) begin
-		if start begin
+		if (start) begin
 			count = next_count;
 			data_count = next_data_count;
 			
@@ -52,45 +52,53 @@ module sd_cmd(
 		end
 		
 		// next four bytes are for argument
-		elif (count < 40) begin
+		else if (count < 40) begin
 			D1 = cmd_args[count - 8];
 			D0 = 1;
 		end
 	
 		// last byte is CRC (dummy byte)
-		elif (count < 48) begin
+		else if (count < 48) begin
 			D1 = cmd_crc[count - 40];
 			D0 = 1;
 		end
 			
 		// then send another dummy byte while waiting for response
-		elif (count < 56) begin
+		else if (count < 56) begin
 			D1 = 0; // <<<< expendable
 			D0 = 1;
 		end
 			
 		// then we receive a response from D0, flags response
-		elif (count < 64)
+		else if (count < 64) begin
 			next_response_flags[count - 56] = D0;
+		end
 			
 		// once we are done SENDING cmd...
 		// wait for 0xFE
-		elif (last_byte != 0xFE)
+		else if (last_byte != 8'hFE) begin
 			next_last_byte = last_byte << 1 || D1;
-		if (last_byte == 0xFE)
+		end
+			
+		if (last_byte == 8'hFE) begin
 			next_data_count = 0;
-			next_last_byte = 0xFF;
+			next_last_byte = 8'hFF;
+		end
+			
 		// 0xFE has been read, now read data transmission (fixed size 32)
-		if (last_byte == 0xFF and data_count < 32)
+		if (last_byte == 8'hFF && data_count < 32) begin
 			next_data_count = data_count + 1;
 			next_data_transmission[data_count] = D0;
+		end
 		
-		if (data_count >= 32)
+		if (data_count >= 32) begin
 			done = 1;
+		end
 		
 		// This is a time out just in case we do't receive data transmission
-		if (count > 1000)
+		if (count > 1000) begin
 			done = 1;
+		end
 		
 		
 	end
