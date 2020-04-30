@@ -1,9 +1,9 @@
-module layer #(N = 100) (	input real [N-1:0] d_in,
+module layer #(N = 100) (	input shortreal [N-1:0] d_in,
 									input int num,
 									input logic clk,
-									input logic reset,
-									output logic ready,
-									output real [N-1:0] d_out	);
+									input logic start,
+									output logic done,
+									output shortreal [N-1:0] d_out	);
 									
 	// init d_outs to zero before setting ready to 0
 	
@@ -17,7 +17,7 @@ module layer #(N = 100) (	input real [N-1:0] d_in,
 	
 	always_ff @ (posedge clk)
 		begin
-			if (ready) begin
+			if (~start) begin
 				state <= halted;
 				prev_right_node <= 0;
 				prev_left_node <= 0;
@@ -39,6 +39,7 @@ module layer #(N = 100) (	input real [N-1:0] d_in,
 		next_state = state;
 		left_node = prev_left_node;
 		right_node = prev_right_node;
+		done = 0;
 		
 		address = num * (N * N) + N * right_node + left_node;
 		// weight = Get float at address!
@@ -48,7 +49,7 @@ module layer #(N = 100) (	input real [N-1:0] d_in,
 		// next state logic
 		case (state)
 			halted:
-				if (~ready)
+				if (start)
 					next_state = address_calculate
 			address_calculate:
 				next_state = weight_read
@@ -57,7 +58,7 @@ module layer #(N = 100) (	input real [N-1:0] d_in,
 					next_state = node_update
 			node_update:
 			begin
-				if (~ready)
+				if (start)
 					next_state = address_calculate
 				else
 					next_state = halted
@@ -86,7 +87,7 @@ module layer #(N = 100) (	input real [N-1:0] d_in,
 				if (right_node >= N)
 					begin
 						right_node = 0
-						ready = 1;
+						done = 1;
 					end
 			end
 	end

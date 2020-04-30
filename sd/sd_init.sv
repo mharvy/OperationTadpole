@@ -4,14 +4,17 @@ module sd_init(
 	output logic done,
 	output logic D1,
 	output logic CS,
-	inout logic D0
+	input logic D0_in,
+	output logic D0_out,
+	output logic [7:0] response_flags,
+	output logic [31:0] cnt
 );
 
 	logic [7:0] cmd_number;
 	logic [31:0] cmd_args;
 	logic [7:0] cmd_crc;
 	logic cmd_start, cmd_done;
-	logic [7:0] response_flags;
+	//logic [7:0] response_flags;
 	logic [31:0] data_transmission;
 	
 	enum {HALT, RESET, VOLTAGE_CHECK, INIT1, INIT2, SET_BLOCK_SIZE, DONE} state, next_state;
@@ -26,7 +29,9 @@ module sd_init(
 		.response_flags,
 		.data_transmission,
 		.D1,
-		.D0);
+		.D0_out,
+		.D0_in,
+		.cnt);
 	
 	always_ff @(posedge clk) begin
 		if (start)
@@ -39,7 +44,7 @@ module sd_init(
 		// Default next state logic
 		next_state = state;
 		// Next state logic
-		case (state)
+		unique case (state)
 			HALT: begin
 				next_state = RESET;
 			end
@@ -100,8 +105,9 @@ module sd_init(
 		cmd_number = 8'h00;
 		cmd_args = 32'h00000000;
 		cmd_crc = 8'h00;
+		cmd_start = 1'b0;
 		// Next output logic
-		case (state)
+		unique case (state)
 			RESET: begin
 				CS = 0;
 				cmd_number = 8'h40 | 8'h00; // CMD0

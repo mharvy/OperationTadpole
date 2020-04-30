@@ -6,11 +6,13 @@ module sd_read(
 	output logic done,
 	output logic D1,
 	output logic CS,
-	inout logic D0
+	input logic D0_in,
+	output logic D0_out
 );
 
 	logic cmd_start, cmd_done;
 	logic [7:0] response_flags;
+	logic [31:0] cnt;
 	enum {HALT, READ, DONE} state, next_state;
 	
 	sd_cmd cmd(
@@ -23,7 +25,9 @@ module sd_read(
 		.response_flags,
 		.data_transmission(data),
 		.D1,
-		.D0);
+		.D0_in,
+		.D0_out,
+		.cnt);
 	
 	always_ff @ (posedge clk) begin
 		if (start)
@@ -35,9 +39,9 @@ module sd_read(
 	always_comb begin
 		// Default next state logic
 		next_state = state;
-		
+		cmd_start = 1'b0;
 		// Next state logic
-		case(state)
+		unique case(state)
 			HALT: begin
 				next_state = READ;
 			end
@@ -61,7 +65,7 @@ module sd_read(
 		CS = 1;
 		done = 0;
 		// Next output logic
-		case(state)
+		unique case(state)
 			READ: begin
 				CS = 0;
 				cmd_start = 1'b1;
