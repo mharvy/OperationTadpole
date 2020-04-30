@@ -6,8 +6,7 @@ module sd_read(
 	output logic done,
 	output logic D1,
 	output logic CS,
-	input logic D0_in,
-	output logic D0_out
+	inout wire D0
 );
 
 	logic cmd_start, cmd_done;
@@ -25,8 +24,7 @@ module sd_read(
 		.response_flags,
 		.data_transmission(data),
 		.D1,
-		.D0_in,
-		.D0_out,
+		.D0,
 		.cnt);
 	
 	always_ff @ (posedge clk) begin

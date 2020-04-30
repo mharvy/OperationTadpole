@@ -8,17 +8,23 @@ module sd_cmd(
 	output logic [7:0] response_flags,
 	output logic [31:0] data_transmission,
 	output logic D1,
-	input logic D0_in,
-	output logic D0_out,
+	inout wire D0,
 	output logic [31:0] cnt
 );
 	int count, next_count;
 	int data_count, next_data_count;
+	
+	logic write_to_D0;
+	logic D0_in, D0_out;
+	
 	logic [7:0] last_byte, next_last_byte;
 	logic [7:0] next_response_flags;
 	logic [31:0] next_data_transmission;
 	
 	assign cnt = count;
+	
+	tristate tristate (.Clk(clk), .tristate_output_enable(write_to_D0), .Data_write(D0_in), .Data_read(D0_out), .Data(D0));
+	
 	
 	always_ff @(posedge clk) begin
 		if (start) begin
@@ -44,45 +50,43 @@ module sd_cmd(
 	always_comb begin
 		done = 0;
 		D1 = 1;
-		D0_out = 1;
 		next_response_flags = response_flags;
 		next_data_transmission = data_transmission;
 		next_last_byte = last_byte;
 		next_data_count = data_count;
 		next_count = count;
 		
+		write_to_D0 = 1'b1;
+		D0_in = 1'b1;
+		
 		// first byte for cmd number
 		if (count < 8) begin
 			D1 = cmd_number[count];
-			D0_out = 1;
 			next_count = count + 1;
 		end
 		
 		// next four bytes are for argument
 		else if (count < 40) begin
 			D1 = cmd_args[count - 8];
-			D0_out = 1;
 			next_count = count + 1;
 		end
 	
 		// last byte is CRC (dummy byte)
 		else if (count < 48) begin
 			D1 = cmd_crc[count - 40];
-			D0_out = 1;
 			next_count = count + 1;
 		end
 			
 		// then send another dummy byte while waiting for response
 		else if (count < 56) begin
 			D1 = 0; // <<<< expendable
-			D0_out = 1;
 			next_count = count + 1;
 		end
 			
 		// then we receive a response from D0, flags response
 		else if (count < 64) begin
-			D0_out = D0_in;
-			next_response_flags[count - 56] = D0_in;
+			write_to_D0 = 1'b0; // reading from D0
+			next_response_flags[count - 56] = D0_out;
 			next_count = count + 1;
 		end
 			
@@ -99,9 +103,9 @@ module sd_cmd(
 			
 		// 0xFE has been read, now read data transmission (fixed size 32)
 		if (last_byte == 8'hFF && data_count < 32) begin
+			write_to_D0 = 1'b0; // reading from D0
+			next_data_transmission[data_count] = D0_out;
 			next_data_count = data_count + 1;
-			D0_out = D0_in;
-			next_data_transmission[data_count] = D0_in;
 		end
 		
 		if (data_count >= 32) begin
@@ -112,11 +116,7 @@ module sd_cmd(
 		if (count > 1000) begin
 			done = 1;
 		end
-		
-		
-		
 	end
 	
-
 
 endmodule

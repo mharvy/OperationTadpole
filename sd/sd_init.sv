@@ -4,8 +4,7 @@ module sd_init(
 	output logic done,
 	output logic D1,
 	output logic CS,
-	input logic D0_in,
-	output logic D0_out,
+	inout wire D0,
 	output logic [7:0] response_flags,
 	output logic [31:0] cnt
 );
@@ -29,8 +28,7 @@ module sd_init(
 		.response_flags,
 		.data_transmission,
 		.D1,
-		.D0_out,
-		.D0_in,
+		.D0,
 		.cnt);
 	
 	always_ff @(posedge clk) begin

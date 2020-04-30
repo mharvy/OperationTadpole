@@ -34,8 +34,7 @@ module sd_test_toplevel(
         .done(init_done),
         .D1,
         .CS,
-        .D0_in(D0),
-		  .D0_out(D0),
+        .D0,
 		  .response_flags,
 		  .cnt
     );
@@ -47,8 +46,7 @@ module sd_test_toplevel(
         .data,
         .D1,
         .CS,
-        .D0_in(D0),
-		  .D0_out(D0)
+        .D0
     );
 	 //HexDriver display0 (.In0(response_flags[3:0]), .Out0(HEX0));
     //HexDriver display1 (.In0(response_flags[7:4]), .Out0(HEX1));
