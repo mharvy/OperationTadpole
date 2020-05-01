@@ -7,15 +7,15 @@ module sd_cmd(
 	output logic done,
 	output logic [7:0] response_flags,
 	output logic [31:0] data_transmission,
-	output logic D1,
+	inout wire D1,
 	inout wire D0,
 	output logic [31:0] cnt
 );
 	int count, next_count;
 	int data_count, next_data_count;
 	
-	logic write_to_D0;
-	logic D0_in, D0_out;
+	logic write_to_D0, write_to_D1;
+	logic D0_in, D0_out, D1_in, D1_out;
 	
 	logic [7:0] last_byte, next_last_byte;
 	logic [7:0] next_response_flags;
@@ -23,7 +23,8 @@ module sd_cmd(
 	
 	assign cnt = count;
 	
-	tristate tristate (.Clk(clk), .tristate_output_enable(write_to_D0), .Data_write(D0_in), .Data_read(D0_out), .Data(D0));
+	tristate t_D0 (.Clk(clk), .tristate_output_enable(write_to_D0), .Data_write(D0_in), .Data_read(D0_out), .Data(D0));
+	tristate t_D1 (.Clk(clk), .tristate_output_enable(write_to_D1), .Data_write(D1_in), .Data_read(D1_out), .Data(D1));
 	
 	
 	always_ff @(posedge clk) begin
@@ -57,29 +58,31 @@ module sd_cmd(
 		next_count = count;
 		
 		write_to_D0 = 1'b1;
+		write_to_D1 = 1'b1;
 		D0_in = 1'b1;
+		D1_in = 1'b1;
 		
 		// first byte for cmd number
 		if (count < 8) begin
-			D1 = cmd_number[count];
+			D1_in = cmd_number[count];
 			next_count = count + 1;
 		end
 		
 		// next four bytes are for argument
 		else if (count < 40) begin
-			D1 = cmd_args[count - 8];
+			D1_in = cmd_args[count - 8];
 			next_count = count + 1;
 		end
 	
 		// last byte is CRC (dummy byte)
 		else if (count < 48) begin
-			D1 = cmd_crc[count - 40];
+			D1_in = cmd_crc[count - 40];
 			next_count = count + 1;
 		end
 			
 		// then send another dummy byte while waiting for response
 		else if (count < 56) begin
-			D1 = 0; // <<<< expendable
+			D1_in = 1'b0; // <<<< expendable
 			next_count = count + 1;
 		end
 			
@@ -93,7 +96,8 @@ module sd_cmd(
 		// once we are done SENDING cmd...
 		// wait for 0xFE
 		else if (last_byte != 8'hFE) begin
-			next_last_byte = last_byte << 1 | D1;
+			write_to_D0 = 1'b0; // reading from D0
+			next_last_byte = last_byte << 1 | D0_out;
 		end
 		
 		if (last_byte == 8'hFE) begin

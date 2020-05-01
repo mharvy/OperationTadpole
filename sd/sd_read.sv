@@ -4,8 +4,8 @@ module sd_read(
 	input logic [31:0] addr,
 	output logic [31:0] data,
 	output logic done,
-	output logic D1,
-	output logic CS,
+	inout wire D1,
+	output wire CS,
 	inout wire D0
 );
 

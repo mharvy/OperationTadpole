@@ -16,9 +16,9 @@ module sd_test_toplevel(
 	 logic [31:0] cnt;
 
     assign reset = ~KEYS[0];
-	 assign D1 = SD_CMD;
-	 assign CS = SD_DAT[3];
-	 assign D0 = SD_DAT[0];
+	 //assign D1 = SD_CMD;  ty Kevin Palani <3
+	 //assign CS = SD_DAT[3];
+	 //assign D0 = SD_DAT[0];
 	 assign SD_CLK = SWITCHES[15];
 
     enum logic [3:0] {HALTED, INIT, READ, DONE} state, next_state;
@@ -32,9 +32,9 @@ module sd_test_toplevel(
         .clk(SD_CLK),
         .start(init_start),
         .done(init_done),
-        .D1,
-        .CS,
-        .D0,
+        .D1(SD_CMD),
+        .CS(SD_DAT[3]),
+        .D0(SD_DAT[0]),
 		  .response_flags,
 		  .cnt
     );
@@ -44,9 +44,9 @@ module sd_test_toplevel(
         .done(read_done),
         .addr,
         .data,
-        .D1,
-        .CS,
-        .D0
+        .D1(SD_CMD),
+        .CS(SD_DAT[3]),
+        .D0(SD_DAT[0])
     );
 	 //HexDriver display0 (.In0(response_flags[3:0]), .Out0(HEX0));
     //HexDriver display1 (.In0(response_flags[7:4]), .Out0(HEX1));

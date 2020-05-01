@@ -2,8 +2,8 @@ module sd_init(
 	input logic clk,
 	input logic start,
 	output logic done,
-	output logic D1,
-	output logic CS,
+	inout wire D1,
+	output wire CS,
 	inout wire D0,
 	output logic [7:0] response_flags,
 	output logic [31:0] cnt
