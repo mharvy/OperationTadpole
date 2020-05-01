@@ -1,14 +1,13 @@
 module sd_control(
-    input logic clk, // SD clock (100kHz)
+    input logic clk,  // SD clock (100kHz)
     input logic reset,
-    input logic sd_read, // When 1, break from IDLE, goto READ
     input logic [31:0] addr,
     output logic [31:0] data,
     inout wire D0,
     inout wire D1,
     inout wire CS,
     output logic init_done,
-    input logic read_start,
+    input logic read_start,  // When 1, break from IDLE, goto READ
     output logic read_done
 );
 	logic cmd_start, cmd_done;
@@ -24,6 +23,8 @@ module sd_control(
 	logic D0_write, D0_read, D1_write, D1_read, CS_write, CS_read;
 	
 	enum {HALT, RESET, VOLTAGE_CHECK, INIT1, INIT2, SET_BLOCK_SIZE, IDLE, READ} state, next_state;
+
+	assign data = data_transmission;
 	
 	tristate t_D0 (.Clk(clk), .tristate_output_enable(write_to_D0), .Data_write(D0_write), .Data_read(D0_read), .Data(D0));
 	tristate t_D1 (.Clk(clk), .tristate_output_enable(1'b1), .Data_write(D1_write), .Data_read(D1_read), .Data(D1));

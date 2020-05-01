@@ -9,12 +9,11 @@ module sd_card_reader(
     output logic [6:0] HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, HEX6, HEX7
 );
 
-    logic init_done, read_start, read_done;
+    logic init_done, read_start, read_done, sd_reset;
     logic [31:0] addr, data;
-    logic sd_reset, sd_read;
 
     assign sd_reset = ~KEYS[0];
-    assign sd_read = ~KEYS[1];
+    assign read_start = ~KEYS[1];
     // Debugging
     assign addr = 32'h00000200 | {16'h0000, SWITCHES};
 
@@ -26,7 +25,6 @@ module sd_card_reader(
     sd_control state_machine (
         .clk(SD_CLK),
         .reset(sd_reset),
-        .sd_read(sd_read),
         .addr,
         .data,
         .D0(SD_DAT[0]),
