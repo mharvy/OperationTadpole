@@ -112,12 +112,6 @@ set_location_assignment PIN_N21 -to KEYS[2]
 set_location_assignment PIN_M21 -to KEYS[1]
 set_location_assignment PIN_M23 -to KEYS[0]
 set_location_assignment PIN_AE13 -to SD_CLK
-set_location_assignment PIN_AD14 -to SD_CMD
-set_location_assignment PIN_AC14 -to SD_DAT[3]
-set_location_assignment PIN_AB14 -to SD_DAT[2]
-set_location_assignment PIN_AF13 -to SD_DAT[1]
-set_location_assignment PIN_AE14 -to SD_DAT[0]
-set_location_assignment PIN_AF14 -to SD_WP_N
 set_location_assignment PIN_AA22 -to SWITCHES[15]
 set_location_assignment PIN_AA23 -to SWITCHES[14]
 set_location_assignment PIN_AA24 -to SWITCHES[13]
@@ -146,4 +140,19 @@ set_global_assignment -name SYSTEMVERILOG_FILE sd_card_reader.sv
 set_global_assignment -name SYSTEMVERILOG_FILE HexDriver.sv
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_location_assignment PIN_AC14 -to CS
+set_location_assignment PIN_AE14 -to D0
+set_location_assignment PIN_AD14 -to D1
+set_location_assignment PIN_G19 -to LED[0]
+set_location_assignment PIN_F19 -to LED[1]
+set_location_assignment PIN_E19 -to LED[2]
+set_location_assignment PIN_F21 -to LED[3]
+set_location_assignment PIN_F18 -to LED[4]
+set_location_assignment PIN_E18 -to LED[5]
+set_location_assignment PIN_J19 -to LED[6]
+set_location_assignment PIN_H19 -to LED[7]
+set_location_assignment PIN_J17 -to LED[8]
+set_location_assignment PIN_G17 -to LED[9]
+set_location_assignment PIN_J15 -to LED[10]
+set_location_assignment PIN_H16 -to LED[11]
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
