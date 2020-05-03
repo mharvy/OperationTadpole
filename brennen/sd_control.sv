@@ -2,7 +2,7 @@ module sd_control(
     input logic clk,  // SD clock (100kHz)
     input logic reset,
     input logic [31:0] addr,
-    output logic [31:0] data_transmission,
+    output logic [31:0] response_data,
 	 output logic [7:0] response_flags,
 	 output logic [31:0] counter,
 	 output logic [7:0] lst_byte,
@@ -44,12 +44,12 @@ module sd_control(
 		.done(cmd_done),
 		.reset,
 		.response_flags,
-		.data_transmission,
+		.response_data,
 		.counter,
-		.lst_byte,
 		.D0,
 		.D1,
-		.response_received
+		.CS,
+		.cur_state(5'b00000)
     );
 	initial begin
 		state <= HALT;
@@ -90,7 +90,7 @@ module sd_control(
 			end
 			VOLTAGE_CHECK: begin
 				if (cmd_done) begin
-					if (response_flags == 8'h01 && data_transmission == cmd_args)
+					if (response_flags == 8'h01 && response_data == cmd_args)
 						next_state = INIT1;
 					cmd_start = 0;
 				end
