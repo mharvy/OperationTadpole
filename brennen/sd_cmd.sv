@@ -11,15 +11,13 @@ module sd_cmd(
 	 output logic [31:0] counter,
     input logic D0,
 	 output logic D1,
-	 output logic CS,
-	 output logic [5:0] cur_state
+	 output logic CS
 );
     int count, next_count;
 	 
     logic [7:0] next_response_flags;
     logic [31:0] next_response_data;
 	 enum logic [5:0] {HALT, WAIT, CS_HIGH, CS_LOW, COMMAND_NUMBER, COMMAND_ARGS, COMMAND_CRC, WAIT_FOR_RESPONSE, READ_RESPONSE, WAIT_FOR_DATA, READ_DATA} state, next_state;
-	 assign cur_state = state;
 	 
 	 // Debugging
 	 assign counter = count;
@@ -76,19 +74,19 @@ module sd_cmd(
 				end
 		  
 		      COMMAND_NUMBER: begin
-				    if (count >= 8) begin
+				    if (count == 7) begin
 					     next_state = COMMAND_ARGS;
 					 end
 				end
 				
 				COMMAND_ARGS: begin
-				    if (count >= 40) begin
+				    if (count == 39) begin
 				        next_state = COMMAND_CRC;
 					 end
 				end
 				
 				COMMAND_CRC: begin
-				    if (count >= 48) begin
+				    if (count == 47) begin
 				        next_state = WAIT_FOR_RESPONSE;
 					 end
 				end
@@ -125,6 +123,7 @@ module sd_cmd(
 		  unique case (state)
 		      HALT: begin
 					 done = 1'b1;
+					 next_count = 0;
 				end
 				
 				WAIT: begin
@@ -139,19 +138,19 @@ module sd_cmd(
 				end
 		  
 		      COMMAND_NUMBER: begin
-				    D1 = cmd_number[8 - count];
+				    D1 = cmd_number[7 - count];
 					 //D1 = cmd_number[count];
 				    next_count = count + 1;
 				end
 				
 				COMMAND_ARGS: begin
-				    D1 = cmd_number[32 - (count - 8)];
+				    D1 = cmd_args[31 - (count - 8)];
 					 //D1 = cmd_number[count - 8];
 					 next_count = count + 1;
 				end
 				
 				COMMAND_CRC: begin
-				    D1 = cmd_number[8 - (count - 40)];
+				    D1 = cmd_crc[7 - (count - 40)];
 				    //D1 = cmd_crc[count - 40];
 					 next_count = count + 1;
 				end
@@ -161,7 +160,7 @@ module sd_cmd(
 				end
 				
 				READ_RESPONSE: begin
-				    next_response_flags[8 - count] = D0;
+				    next_response_flags[6 - count] = D0;
 				    next_count = count + 1;
 				end
 				

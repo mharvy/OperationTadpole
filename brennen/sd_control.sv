@@ -2,17 +2,15 @@ module sd_control(
     input logic clk,  // SD clock (100kHz)
     input logic reset,
     input logic [31:0] addr,
-    output logic [31:0] response_data,
 	 output logic [7:0] response_flags,
-	 output logic [31:0] counter,
-	 output logic [7:0] lst_byte,
+	 output logic [31:0] response_data,
     input logic D0,
     output logic D1,
     output logic CS,
     output logic init_done,
     input logic read_start,  // When 1, break from IDLE, goto READ
     output logic read_done,
-	 output logic response_received
+	 output logic [4:0] cur_state
 );
 	logic cmd_start, cmd_done;
 
@@ -26,15 +24,10 @@ module sd_control(
 	//logic write_to_D0;
 	//logic D0_write, D0_read, D1_write, D1_read, CS_write, CS_read;
 	
-	enum {HALT, RESET, VOLTAGE_CHECK, INIT1, INIT2, SET_BLOCK_SIZE, IDLE, READ} state, next_state;
-
-	//assign data = data_transmission;
-	//assign r1 = response_flags;
+	enum logic [4:0] {HALT, RESET, RESET_WAIT, VOLTAGE_CHECK, INIT1, INIT2, SET_BLOCK_SIZE, IDLE, READ} state, next_state;
+	assign cur_state = state;
 	
-	//tristate t_D0 (.Clk(clk), .tristate_output_enable(write_to_D0), .Data_write(D0_write), .Data_read(D0_read), .Data(D0));
-	//tristate t_D1 (.Clk(clk), .tristate_output_enable(1'b1), .Data_write(D1_write), .Data_read(D1_read), .Data(D1));
-	//tristate t_CS (.Clk(clk), .tristate_output_enable(1'b1), .Data_write(CS_write), .Data_read(CS_read), .Data(CS));
-
+	
 	sd_cmd cmd(
 		.cmd_number, 
 		.cmd_args,
@@ -45,11 +38,9 @@ module sd_control(
 		.reset,
 		.response_flags,
 		.response_data,
-		.counter,
 		.D0,
 		.D1,
-		.CS,
-		.cur_state(5'b00000)
+		.CS
     );
 	initial begin
 		state <= HALT;
@@ -70,7 +61,6 @@ module sd_control(
 		cmd_start = 1'b0;
 		init_done = 1'b0;
 		read_done = 1'b0;
-		CS = 1'b1;
 
 		cmd_number = 8'h00;
 		cmd_args = 32'h00000000;
@@ -82,10 +72,13 @@ module sd_control(
 				next_state = RESET;
 			end
 			RESET: begin
+				if (D0 == 1'b1)
+					next_state = RESET_WAIT;
+			end
+			RESET_WAIT: begin
 				if (cmd_done) begin
 					if (response_flags == 8'h01)
 						next_state = VOLTAGE_CHECK;
-					cmd_start = 0;
 				end
 			end
 			VOLTAGE_CHECK: begin
@@ -136,16 +129,18 @@ module sd_control(
 		// Next output logic
 		unique case (state)
 			RESET: begin
-				CS = 1'b0;
 				cmd_number = 8'h40 | 8'h00; // CMD0
 				cmd_args = 32'h00000000;
 				cmd_crc = 8'h95;
 				if (D0 == 1'b1)
 					cmd_start = 1'b1;
 			end
+			
+			RESET_WAIT: begin
+				cmd_start = 1'b0;
+			end
 				
 			VOLTAGE_CHECK: begin
-				CS = 1'b0;
 				cmd_number = 8'h40 | 8'h08; // CMD8
 				cmd_args = 32'h000001AA;
 				cmd_crc = 8'h87;
@@ -154,7 +149,6 @@ module sd_control(
 			end
 			
 			INIT1: begin
-				CS = 1'b0;
 				cmd_number = 8'h40 | 8'h37;  // CMD55
 				cmd_args = 32'h00000000;
 				cmd_crc = 8'h65;
@@ -163,7 +157,6 @@ module sd_control(
 			end
 			
 			INIT2: begin
-				CS = 1'b0;
 				cmd_number = 8'h40 | 8'h29;  // ACMD41
 				cmd_args = 32'h40000000;
 				cmd_crc = 8'h77;
@@ -172,7 +165,6 @@ module sd_control(
 			end
 			
 			SET_BLOCK_SIZE: begin
-				CS = 1'b0;
 				cmd_number = 8'h40 | 8'h10; // CMD16
 				cmd_args = 32'h00000004;
 				cmd_crc = 8'hFF;
@@ -181,12 +173,10 @@ module sd_control(
 			end
 			
 			IDLE : begin
-				CS = 1'b1;
 				init_done = 1'b1;
 			end
 
 			READ: begin
-				CS = 1'b0;
 				cmd_number = 8'h40 | 8'h11; // CMD17
 				cmd_args = addr;
 				cmd_crc = 8'hFF;

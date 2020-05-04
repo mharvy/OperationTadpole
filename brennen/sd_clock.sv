@@ -13,12 +13,12 @@ module sd_clock (
 
     always_comb begin
 
-		  out_clk = (count < 50000000) ? 1'b0 : 1'b1;
+		  out_clk = (count < 125) ? 1'b0 : 1'b1;
 	 
-        if (count < 50000000) begin// out clk low for 500 cycles
+        if (count < 125) begin// out clk low for 500 cycles
             next_count = count + 1;
 		  end
-        else if (count < 100000000) begin// out clk high for 500 cycles
+        else if (count < 250) begin// out clk high for 500 cycles
             next_count = count + 1;
 		  end
 		  else begin// reset counter
