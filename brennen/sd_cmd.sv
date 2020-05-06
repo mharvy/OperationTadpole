@@ -11,13 +11,13 @@ module sd_cmd(
     input logic D0,
 	 output logic D1,
 	 output logic CS,
-	 output logic [5:0] cur_state
+	 output logic [4:0] cur_state
 );
     int count, next_count;
 	 
     logic [7:0] next_response_flags;
     logic [31:0] next_response_data;
-	 enum logic [5:0] {HALT, WAIT, CS_HIGH, CS_LOW, COMMAND_NUMBER, COMMAND_ARGS, COMMAND_CRC, WAIT_FOR_RESPONSE, READ_RESPONSE, WAIT_FOR_DATA, READ_DATA, DONE} state, next_state;
+	 enum logic [4:0] {HALT, WAIT, CS_HIGH, CS_LOW, COMMAND_NUMBER, COMMAND_ARGS, COMMAND_CRC, WAIT_FOR_RESPONSE, READ_RESPONSE, WAIT_FOR_DATA, READ_DATA, DONE} state, next_state;
 	 
     assign cur_state = state;
 	 

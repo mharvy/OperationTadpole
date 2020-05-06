@@ -17,7 +17,7 @@ module sd_card_reader(
     assign read_start = ~KEYS[1];
     // Debugging
     assign addr = 32'h00000200 | {16'h0000, SWITCHES};
-    //logic [5:0] cur_state; 
+    logic [4:0] cur_state; 
 
     sd_clock sd_clock (
         .clk(CLK),
@@ -29,8 +29,7 @@ module sd_card_reader(
 	 assign LED[1] = D1;
 	 assign LED[2] = CS;
 	 
-	 /*
-    sd_control state_machine (
+    sd_controller state_machine (
         .clk(SD_CLK),
         .reset(sd_reset),
         .addr,
@@ -39,15 +38,14 @@ module sd_card_reader(
         .D0,
         .D1,
         .CS,
+		  .init_start(~KEYS[2]),
         .init_done,
         .read_start,
         .read_done,
-		  .cur_state,
-		  .cmd_start(~KEYS[2])
+		  .cur_state
     );
-	 */
 	 
-	 
+	 /*
 	 sd_cmd cmd(
 		.cmd_number(8'h40), 
 		.cmd_args(32'h00000000),
@@ -62,14 +60,14 @@ module sd_card_reader(
 		.D1,
 		.CS
     );
+	 */
 	 
 	 
-	 
-	 //assign LED[6] = cur_state[0];
-	 //assign LED[7] = cur_state[1];
-	 //assign LED[8] = cur_state[2];
-	 //assign LED[9] = cur_state[3];
-	 //assign LED[10] = cur_state[4];
+	 assign LED[6] = cur_state[0];
+	 assign LED[7] = cur_state[1];
+	 assign LED[8] = cur_state[2];
+	 assign LED[9] = cur_state[3];
+	 assign LED[10] = cur_state[4];
 	 
 
     HexDriver display0 (.In0(r1[3:0]), .Out0(HEX0));
