@@ -23,7 +23,7 @@ module sd_controller (
 	enum logic [4:0] {HALT, WAIT, CMD0, CMD0_DONE, CMD8, CMD8_DONE, CMD55, CMD55_DONE, ACMD41, ACMD41_DONE, CMD16, CMD16_DONE, IDLE, CMD17, CMD17_DONE} state, next_state;
 	
 	sd_cmd cmd (
-		.cmd-number,
+		.cmd_number,
 		.cmd_args,
 		.cmd_crc,
 		.clk,
@@ -45,7 +45,7 @@ module sd_controller (
 		.D_Out(response_flags)
 	);
 	
-	register #(.N(32)) rsp_flags (
+	register #(.N(32)) rsp_data (
 		.D_In(response_data_temp),
 		.Clk(clk),
 		.Reset(reset),
@@ -61,7 +61,7 @@ module sd_controller (
 		if (reset)
 			state <= HALT;
 		else
-			state <= next_state;s
+			state <= next_state;
 	end
 	
 	always_comb begin
@@ -91,7 +91,7 @@ module sd_controller (
 			CMD0: begin
 				if (cmd_done == 1'b1) begin
 					if (response_flags == 8'h01) begin
-						next_state = CMD0_DONE
+						next_state = CMD0_DONE;
 					end
 						
 				end
@@ -114,7 +114,7 @@ module sd_controller (
 			// INIT1
 			CMD55: begin
 				if (cmd_done == 1'b1) begin
-					if (response_flags = 8'h01)
+					if (response_flags == 8'h01)
 						next_state = CMD55_DONE;
 				end
 			end

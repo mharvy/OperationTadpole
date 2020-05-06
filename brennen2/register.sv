@@ -13,4 +13,3 @@ module register #(N = 16) (
 				D_Out <= D_In;
 		end
 endmodule
-s

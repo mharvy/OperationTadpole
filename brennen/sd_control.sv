@@ -10,13 +10,16 @@ module sd_control(
     output logic init_done,
     input logic read_start,  // When 1, break from IDLE, goto READ
     output logic read_done,
-	 output logic [4:0] cur_state
+	 output logic [5:0] cur_state,
+	 input logic cmd_start
 );
-	logic cmd_start, cmd_done;
+	//logic cmd_start, next_cmd_start, 
+	logic cmd_done;
 
    logic [7:0] cmd_number;
 	logic [31:0] cmd_args;
 	logic [7:0] cmd_crc;
+	int count, next_count;
 	
 	//logic [7:0] response_flags;
 	//logic [31:0] data_transmission;
@@ -24,8 +27,8 @@ module sd_control(
 	//logic write_to_D0;
 	//logic D0_write, D0_read, D1_write, D1_read, CS_write, CS_read;
 	
-	enum logic [4:0] {HALT, RESET, RESET_WAIT, VOLTAGE_CHECK, INIT1, INIT2, SET_BLOCK_SIZE, IDLE, READ} state, next_state;
-	assign cur_state = state;
+	enum logic [4:0] {HALT, WAIT, RESET, VOLTAGE_CHECK, INIT1, INIT2, SET_BLOCK_SIZE, IDLE, READ} state, next_state;
+	//assign cur_state = state;
 	
 	
 	sd_cmd cmd(
@@ -40,59 +43,69 @@ module sd_control(
 		.response_data,
 		.D0,
 		.D1,
-		.CS
+		.CS,
+		.cur_state
     );
 	initial begin
 		state <= HALT;
 	end
 
 	always_ff @(posedge clk) begin
-		if (reset)
+		if (reset) begin
 			state <= HALT;
-		else
+			count <= 0;
+			//cmd_start <= 1'b0;
+		end
+		else begin
 			state <= next_state;
+			count <= next_count;
+			//cmd_start <= next_cmd_start;
+		end
 	end
 
 	always_comb begin
 		// Default next state logic
 		next_state = state;
+		next_count = count;
 		
 		// Default output values
-		cmd_start = 1'b0;
+		//cmd_start = 1'b0;
 		init_done = 1'b0;
 		read_done = 1'b0;
 
 		cmd_number = 8'h00;
 		cmd_args = 32'h00000000;
 		cmd_crc = 8'h00;
+		
+		//next_cmd_start = cmd_start;
 
 		// Next state logic
 		unique case (state)
 			HALT: begin
-				next_state = RESET;
+				next_state = WAIT;
+			end
+			WAIT: begin
+				if (count == 1000000) begin
+					next_state = RESET;
+				end
 			end
 			RESET: begin
-				if (D0 == 1'b1)
-					next_state = RESET_WAIT;
-			end
-			RESET_WAIT: begin
-				if (cmd_done) begin
-					if (response_flags == 8'h01)
-						next_state = VOLTAGE_CHECK;
+				if (cmd_done == 1'b1 && response_flags == 8'h01) begin
+					next_state = VOLTAGE_CHECK;
 				end
 			end
 			VOLTAGE_CHECK: begin
 				if (cmd_done) begin
 					if (response_flags == 8'h01 && response_data == cmd_args)
 						next_state = INIT1;
-					cmd_start = 0;
+					//cmd_start = 1'b0;
 				end
 			end
 			INIT1: begin
 				if (cmd_done) begin
 					if (response_flags == 8'h01)
 						next_state = INIT2;
-					cmd_start = 0;
+					//cmd_start = 1'b0;
 				end
 			end
 			INIT2: begin
@@ -101,14 +114,14 @@ module sd_control(
 						next_state = SET_BLOCK_SIZE;
 					else if (response_flags == 8'h01)
 						next_state = INIT1;
-					cmd_start = 0;
+					//cmd_start = 1'b0;
 				end
 			end
 			SET_BLOCK_SIZE: begin
 				if (cmd_done) begin
 					if (response_flags == 8'h00)
 						next_state = IDLE;
-					cmd_start = 0;
+					//cmd_start = 1'b0;
 				end
 			end
 			IDLE: begin
@@ -121,55 +134,58 @@ module sd_control(
 						next_state = IDLE;
 						read_done = 1'b1;
 					end
-					cmd_start = 1'b0;
+					//cmd_start = 1'b0;
 				end
 			end
 		endcase
 
 		// Next output logic
 		unique case (state)
+			
+			WAIT: begin
+				next_count = count + 1;
+			end
+		
 			RESET: begin
 				cmd_number = 8'h40 | 8'h00; // CMD0
 				cmd_args = 32'h00000000;
 				cmd_crc = 8'h95;
-				if (D0 == 1'b1)
-					cmd_start = 1'b1;
-			end
-			
-			RESET_WAIT: begin
-				cmd_start = 1'b0;
+				//if (~cmd_done && D0 == 1'b1)
+				//	next_cmd_start = 1'b1;
+				//else
+				//   next_cmd_start = 1'b0;
 			end
 				
 			VOLTAGE_CHECK: begin
 				cmd_number = 8'h40 | 8'h08; // CMD8
 				cmd_args = 32'h000001AA;
 				cmd_crc = 8'h87;
-				if (D0 == 1'b1)
-					cmd_start = 1'b1;
+				//if (D0 == 1'b1)
+				//	cmd_start = 1'b1;
 			end
 			
 			INIT1: begin
 				cmd_number = 8'h40 | 8'h37;  // CMD55
 				cmd_args = 32'h00000000;
 				cmd_crc = 8'h65;
-				if (D0 == 1'b1)
-					cmd_start = 1'b1;
+				//if (D0 == 1'b1)
+				//	cmd_start = 1'b1;
 			end
 			
 			INIT2: begin
 				cmd_number = 8'h40 | 8'h29;  // ACMD41
 				cmd_args = 32'h40000000;
 				cmd_crc = 8'h77;
-				if (D0 == 1'b1)
-					cmd_start = 1'b1;
+				//if (D0 == 1'b1)
+				//	cmd_start = 1'b1;
 			end
 			
 			SET_BLOCK_SIZE: begin
 				cmd_number = 8'h40 | 8'h10; // CMD16
 				cmd_args = 32'h00000004;
 				cmd_crc = 8'hFF;
-				if (D0 == 1'b1)
-					cmd_start = 1'b1;
+				//if (D0 == 1'b1)
+				//	cmd_start = 1'b1;
 			end
 			
 			IDLE : begin
@@ -180,8 +196,8 @@ module sd_control(
 				cmd_number = 8'h40 | 8'h11; // CMD17
 				cmd_args = addr;
 				cmd_crc = 8'hFF;
-				if (D0 == 1'b1)
-					cmd_start = 1'b1;
+				//if (D0 == 1'b1)
+				//	cmd_start = 1'b1;
 			end
 		endcase
 	end

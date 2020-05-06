@@ -8,20 +8,19 @@ module sd_cmd(
 	 input logic reset,
     output logic [7:0] response_flags,
     output logic [31:0] response_data,
-	 output logic [31:0] counter,
     input logic D0,
 	 output logic D1,
-	 output logic CS
+	 output logic CS,
+	 output logic [5:0] cur_state
 );
     int count, next_count;
 	 
     logic [7:0] next_response_flags;
     logic [31:0] next_response_data;
-	 enum logic [5:0] {HALT, WAIT, CS_HIGH, CS_LOW, COMMAND_NUMBER, COMMAND_ARGS, COMMAND_CRC, WAIT_FOR_RESPONSE, READ_RESPONSE, WAIT_FOR_DATA, READ_DATA} state, next_state;
+	 enum logic [5:0] {HALT, WAIT, CS_HIGH, CS_LOW, COMMAND_NUMBER, COMMAND_ARGS, COMMAND_CRC, WAIT_FOR_RESPONSE, READ_RESPONSE, WAIT_FOR_DATA, READ_DATA, DONE} state, next_state;
 	 
-	 // Debugging
-	 assign counter = count;
-
+    assign cur_state = state;
+	 
 	 initial begin
         response_flags = 8'h00;
         response_data = 32'h00000000;
@@ -102,7 +101,7 @@ module sd_cmd(
 					     next_state = WAIT_FOR_DATA;
 					 end
 					 else if (count >= 7) begin
-					     next_state = HALT;
+					     next_state = DONE;
 					 end
 				end
 				
@@ -114,6 +113,12 @@ module sd_cmd(
 				
 				READ_DATA: begin
 				    if (count >= 32) begin
+					     next_state = DONE;
+					 end
+				end
+				
+				DONE: begin
+				    if (~start) begin
 					     next_state = HALT;
 					 end
 				end
@@ -122,7 +127,7 @@ module sd_cmd(
 	     // Output logic
 		  unique case (state)
 		      HALT: begin
-					 done = 1'b1;
+					 //done = 1'b1;
 					 next_count = 0;
 				end
 				
@@ -171,6 +176,10 @@ module sd_cmd(
 				READ_DATA: begin
 				    next_response_data[32 - count] = D0;
 					 next_count = count + 1;
+				end
+				
+				DONE: begin
+				    done = 1'b1;
 				end
 		  endcase
 	 

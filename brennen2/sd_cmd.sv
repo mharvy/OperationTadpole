@@ -118,8 +118,8 @@ module sd_cmd(
 					 end
 				end
 				DONE: begin
-					if (~start)
-						next_state = HALT
+                if (~start)
+                    next_state = HALT;
 				end
 		  endcase
 	 
