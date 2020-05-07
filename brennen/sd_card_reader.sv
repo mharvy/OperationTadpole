@@ -28,7 +28,9 @@ module sd_card_reader(
 	 assign LED[0] = D0;
 	 assign LED[1] = D1;
 	 assign LED[2] = CS;
+	 //assign LED[3] = init_done;
 	 
+	 /*
     sd_controller state_machine (
         .clk(SD_CLK),
         .reset(sd_reset),
@@ -44,8 +46,9 @@ module sd_card_reader(
         .read_done,
 		  .cur_state
     );
+	 */
 	 
-	 /*
+	 
 	 sd_cmd cmd(
 		.cmd_number(8'h40), 
 		.cmd_args(32'h00000000),
@@ -58,16 +61,15 @@ module sd_card_reader(
 		.response_data(data),
 		.D0,
 		.D1,
-		.CS
-    );
-	 */
+		.CS,
+		.cur_state
+    ); 
 	 
-	 
-	 assign LED[6] = cur_state[0];
-	 assign LED[7] = cur_state[1];
-	 assign LED[8] = cur_state[2];
-	 assign LED[9] = cur_state[3];
-	 assign LED[10] = cur_state[4];
+	 //assign LED[6] = cur_state[0];
+	 //assign LED[7] = cur_state[1];
+	 //assign LED[8] = cur_state[2];
+	 //assign LED[9] = cur_state[3];
+	 //assign LED[10] = cur_state[4];
 	 
 
     HexDriver display0 (.In0(r1[3:0]), .Out0(HEX0));
